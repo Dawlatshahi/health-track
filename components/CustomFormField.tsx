@@ -2,7 +2,6 @@
 
 import {
 	FormControl,
-	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
@@ -18,7 +17,6 @@ import { FormFieldType } from './forms/PatientForm';
 
 interface CustomProps {
 	control: Control<any>;
-	fieldType: FormFieldType;
 	name: string;
 	label?: string;
 	placeholder?: string;
@@ -29,6 +27,7 @@ interface CustomProps {
 	showTimeSelect?: boolean;
 	children?: React.ReactNode;
 	renderSkeleton?: (field: any) => React.ReactNode;
+	fieldType: FormFieldType;
 }
 
 const RenderField = ({ field, props }: { field: any; props: CustomProps }) => {
