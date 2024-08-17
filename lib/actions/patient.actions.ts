@@ -1,7 +1,20 @@
 'use server';
 
 import { ID, Query } from 'node-appwrite';
-import { users } from '../appwrite.config';
+
+import { InputFile } from 'node-appwrite/file';
+
+import {
+	BUCKET_ID,
+	DATABASE_ID,
+	ENDPOINT,
+	PATIENT_COLLECTION_ID,
+	PROJECT_ID,
+	databases,
+	storage,
+	users,
+} from '../appwrite.config';
+import { parseStringify } from '../utils';
 
 export const createUser = async (user: CreateUserParams) => {
 	try {
@@ -12,13 +25,63 @@ export const createUser = async (user: CreateUserParams) => {
 			undefined,
 			user.name
 		);
-		return newUser;
+
+		return parseStringify(newUser);
 	} catch (error: any) {
-		if (error?.code === 409) {
-			const documents = await users.list([Query.equal('email', [user.email])]);
-			return documents.users[0];
-		} else {
-			console.error('User creation failed:', error);
+		if (error && error?.code === 409) {
+			const existingUser = await users.list([
+				Query.equal('email', [user.email]),
+			]);
+
+			return existingUser.users[0];
 		}
+		console.error('An error occurred while creating a new user:', error);
+	}
+};
+
+export const getUser = async (userId: string) => {
+	try {
+		const uer = await users.get(userId);
+		return parseStringify(uer);
+	} catch (error) {
+		console.log(error);
+	}
+};
+
+export const registerPatient = async ({
+	identificationDocument,
+	...patient
+}: RegisterUserParams) => {
+	try {
+		let file = null; // Declare and initialize file
+
+		if (identificationDocument) {
+			const inputFile = InputFile.fromBuffer(
+				identificationDocument?.get('blobFile') as Blob,
+				identificationDocument?.get('fileName') as string
+			);
+
+			file = await storage.createFile(BUCKET_ID!, ID.unique(), inputFile);
+		}
+
+		// Use file in the URL construction, checking if it was assigned
+		const identificationDocumentUrl = file
+			? `${ENDPOINT}/storage/buckets/${BUCKET_ID}/files/${file.$id}/view?project=${PROJECT_ID}`
+			: null;
+
+		const newPatient = await databases.createDocument(
+			DATABASE_ID!,
+			PATIENT_COLLECTION_ID!,
+			ID.unique(),
+			{
+				identificationDocumentId: file?.$id ? file.$id : null,
+				identificationDocumentUrl,
+				...patient,
+			}
+		);
+
+		return parseStringify(newPatient);
+	} catch (error) {
+		console.error('An error occurred while creating a new patient:', error);
 	}
 };
