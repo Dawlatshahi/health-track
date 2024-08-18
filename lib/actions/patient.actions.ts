@@ -41,8 +41,8 @@ export const createUser = async (user: CreateUserParams) => {
 
 export const getUser = async (userId: string) => {
 	try {
-		const uer = await users.get(userId);
-		return parseStringify(uer);
+		const user = await users.get(userId);
+		return parseStringify(user);
 	} catch (error) {
 		console.log(error);
 	}
@@ -83,5 +83,18 @@ export const registerPatient = async ({
 		return parseStringify(newPatient);
 	} catch (error) {
 		console.error('An error occurred while creating a new patient:', error);
+	}
+};
+
+export const getPatient = async (userId: string) => {
+	try {
+		const patients = await databases.listDocuments(
+			DATABASE_ID!,
+			PATIENT_COLLECTION_ID!,
+			[Query.equal('userId', userId)]
+		);
+		return parseStringify(patients.documents[0]);
+	} catch (error) {
+		console.log(error);
 	}
 };
